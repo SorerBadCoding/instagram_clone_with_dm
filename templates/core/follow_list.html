@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}{% if mode == 'followers' %}Followers{% else %}Following{% endif %} • {{ profile_user.username }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <h5 class="mt-2 mb-3">
+                <a href="{% url 'profile_detail' username=profile_user.username %}" class="text-reset me-2"><i class="fa-solid fa-arrow-left"></i></a>
+                {{ profile_user.username }} &middot; {% if mode == 'followers' %}Followers{% else %}Following{% endif %}
+            </h5>
+            {% if people %}
+            <div class="list-group">
+                {% for person in people %}
+                <div class="list-group-item d-flex align-items-center justify-content-between">
+                    <a href="{% url 'profile_detail' username=person.username %}" class="d-flex align-items-center text-reset text-decoration-none">
+                        <img src="{{ person.profile.profile_picture.url }}" class="post-avatar" alt="{{ person.username }}">
+                        <span class="fw-semibold ms-2">{{ person.username }}</span>
+                    </a>
+                    {% if person != request.user %}
+                    <form action="{% url 'follow_toggle' username=person.username %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        {% is_following request.user person as already_following %}
+                        <button type="submit" class="btn btn-sm {% if already_following %}btn-outline-secondary{% else %}btn-primary ig-btn{% endif %}">
+                            {% if already_following %}Following{% else %}Follow{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">
+                {% if mode == 'followers' %}No followers yet.{% else %}Not following anyone yet.{% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

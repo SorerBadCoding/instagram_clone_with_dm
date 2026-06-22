@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Edit profile • InstaClone{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card form-card shadow-sm">
+                <div class="card-header bg-transparent fw-semibold text-center">Edit profile</div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="{{ object.profile_picture.url }}" class="profile-avatar-edit" alt="{{ request.user.username }}">
+                        <div class="fw-semibold mt-2">{{ request.user.username }}</div>
+                    </div>
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Profile picture</label>
+                            {{ form.profile_picture }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">First name</label>
+                                {{ form.first_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Last name</label>
+                                {{ form.last_name }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            {{ form.email }}
+                            {% for error in form.email.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Bio</label>
+                            {{ form.bio }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Website</label>
+                            {{ form.website }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 ig-btn">Save changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

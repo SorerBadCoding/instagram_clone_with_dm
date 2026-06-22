@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Log in • InstaClone{% endblock %}
+{% block guest_content %}
+<div class="auth-page">
+    <div class="auth-card card shadow-sm">
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <i class="fa-brands fa-instagram auth-logo"></i>
+                <h1 class="auth-title">InstaClone</h1>
+            </div>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    <div class="text-danger small mb-2">{{ form.non_field_errors }}</div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary w-100 ig-btn">Log in</button>
+            </form>
+        </div>
+    </div>
+    <div class="auth-card card shadow-sm mt-3 text-center p-3">
+        Don't have an account? <a href="{% url 'register' %}" class="fw-semibold">Sign up</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% load static %}
+<div class="stories-carousel">
+    <a href="{% url 'story_create' %}" class="story-circle add-story">
+        <span class="story-ring no-ring">
+            <img src="{{ request.user.profile.profile_picture.url }}" alt="Add story">
+            <span class="add-story-plus"><i class="fa-solid fa-circle-plus"></i></span>
+        </span>
+        <span class="story-username">Your story</span>
+    </a>
+    {% for group in story_groups %}
+        {% if group.user != request.user %}
+        <a href="{% url 'story_viewer' username=group.user.username %}" class="story-circle">
+            <span class="story-ring">
+                <img src="{{ group.user.profile.profile_picture.url }}" alt="{{ group.user.username }}">
+            </span>
+            <span class="story-username">{{ group.user.username|truncatechars:10 }}</span>
+        </a>
+        {% endif %}
+    {% endfor %}
+</div>

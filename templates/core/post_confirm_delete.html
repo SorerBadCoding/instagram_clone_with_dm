@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Delete post • InstaClone{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="card form-card shadow-sm text-center">
+                <div class="card-body p-4">
+                    <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                    <h5>Delete post?</h5>
+                    <p class="text-muted">This can't be undone. This will permanently delete your post.</p>
+                    {% if object.image %}
+                    <img src="{{ object.image.url }}" class="img-fluid rounded mb-3" style="max-height:200px;object-fit:cover;" alt="Post to delete">
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-100 mb-2">Delete</button>
+                        <a href="{% url 'post_detail' pk=object.pk %}" class="btn btn-outline-secondary w-100">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

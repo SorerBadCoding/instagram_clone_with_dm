@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit post{% else %}New post{% endif %} • InstaClone{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card form-card shadow-sm">
+                <div class="card-header bg-transparent text-center fw-semibold">
+                    {% if object %}Edit post{% else %}Create new post{% endif %}
+                </div>
+                <div class="card-body">
+                    {% if object and object.image %}
+                    <div class="text-center mb-3">
+                        <img src="{{ object.image.url }}" class="img-fluid rounded current-image-preview" alt="Current image">
+                    </div>
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{% if object %}Replace photo{% else %}Photo{% endif %}</label>
+                            {{ form.image }}
+                            {% for error in form.image.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Caption</label>
+                            {{ form.caption }}
+                            {% for error in form.caption.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Location</label>
+                            {{ form.location }}
+                            {% for error in form.location.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 ig-btn">
+                            {% if object %}Save changes{% else %}Share{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

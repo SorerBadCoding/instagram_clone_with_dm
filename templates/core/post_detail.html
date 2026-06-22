@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}Post by {{ post.user.username }} • InstaClone{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card post-detail-card">
+                <div class="row g-0">
+                    <div class="col-md-7 post-detail-image-wrap">
+                        <img src="{{ post.image.url }}" class="post-detail-image" alt="Post by {{ post.user.username }}">
+                    </div>
+                    <div class="col-md-5 d-flex flex-column post-detail-side">
+                        <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                            <a href="{% url 'profile_detail' username=post.user.username %}" class="d-flex align-items-center text-reset text-decoration-none">
+                                <img src="{{ post.user.profile.profile_picture.url }}" class="post-avatar" alt="{{ post.user.username }}">
+                                <span class="fw-semibold ms-2">{{ post.user.username }}</span>
+                            </a>
+                            {% if post.user == request.user %}
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-link text-reset" type="button" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'post_update' pk=post.pk %}"><i class="fa-solid fa-pen me-2"></i>Edit</a></li>
+                                    <li><a class="dropdown-item text-danger" href="{% url 'post_delete' pk=post.pk %}"><i class="fa-solid fa-trash me-2"></i>Delete</a></li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="comments-scroll p-3 flex-grow-1" id="comments">
+                            {% if post.caption %}
+                            <div class="d-flex mb-3">
+                                <img src="{{ post.user.profile.profile_picture.url }}" class="post-avatar" alt="{{ post.user.username }}">
+                                <div class="ms-2">
+                                    <a href="{% url 'profile_detail' username=post.user.username %}" class="fw-semibold text-reset text-decoration-none">{{ post.user.username }}</a>
+                                    {{ post.caption }}
+                                    <div class="text-muted small">{{ post.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% for comment in comments %}
+                            <div class="d-flex mb-3">
+                                <img src="{{ comment.user.profile.profile_picture.url }}" class="post-avatar" alt="{{ comment.user.username }}">
+                                <div class="ms-2 flex-grow-1">
+                                    <a href="{% url 'profile_detail' username=comment.user.username %}" class="fw-semibold text-reset text-decoration-none">{{ comment.user.username }}</a>
+                                    {{ comment.content }}
+                                    <div class="text-muted small d-flex align-items-center gap-2">
+                                        <span>{{ comment.created_at|timesince }} ago</span>
+                                        {% if comment.user == request.user or post.user == request.user %}
+                                        <form action="{% url 'comment_delete' pk=comment.pk %}" method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link btn-sm p-0 text-muted">Delete</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            {% if not post.caption %}
+                            <p class="text-muted text-center mt-4">No comments yet.</p>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div class="border-top p-3">
+                            <div class="post-actions mb-2">
+                                <form action="{% url 'like_toggle' pk=post.pk %}" method="post" class="like-form d-inline" data-post-id="{{ post.pk }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    {% has_liked post request.user as liked %}
+                                    <button type="submit" class="btn btn-link p-0 like-btn {% if liked %}liked{% endif %}" aria-label="Like">
+                                        {% if liked %}<i class="fa-solid fa-heart text-danger"></i>{% else %}<i class="fa-regular fa-heart"></i>{% endif %}
+                                    </button>
+                                </form>
+                                <a href="#comments" class="btn btn-link p-0 ms-3"><i class="fa-regular fa-comment"></i></a>
+                            </div>
+                            <div class="fw-semibold likes-count" data-post-id="{{ post.pk }}">{{ post.likes_count }} like{{ post.likes_count|pluralize }}</div>
+                            <div class="text-muted small text-uppercase mb-2">{{ post.created_at|timesince }} ago</div>
+                            <form action="{% url 'comment_add' pk=post.pk %}" method="post" class="d-flex align-items-center gap-2">
+                                {% csrf_token %}
+                                {{ comment_form.content }}
+                                <button type="submit" class="btn btn-link fw-semibold ig-link-btn">Post</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ other.username }} · InstaClone{% endblock %}
+
+{% block content %}
+<div class="dm-layout">
+    <!-- ── Sidebar (conversations list) ──────────────────── -->
+    <div class="dm-sidebar d-none d-lg-flex flex-column" id="dmSidebar">
+        <div class="dm-sidebar-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="fw-700 mb-0">{{ user.username }}</h5>
+                <button class="icon-btn" data-bs-toggle="modal" data-bs-target="#newDmModal">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+            </div>
+            <div class="dm-search-wrap mt-3">
+                <input type="text" class="form-control dm-search" placeholder="Search conversations..." id="convoSearch">
+            </div>
+        </div>
+        <div class="dm-convo-list" id="convoList">
+            {% for item in enriched_conversations %}
+            <a href="{% url 'conversation' item.convo.pk %}" class="dm-convo-item {% if item.unread > 0 %}unread{% endif %} {% if item.convo.pk == convo.pk %}active{% endif %}">
+                <div class="dm-convo-avatar-wrap">
+                    <img src="{{ item.other.profile.profile_picture.url }}" alt="{{ item.other.username }}" class="dm-convo-avatar">
+                    <span class="online-dot"></span>
+                </div>
+                <div class="dm-convo-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="dm-convo-name {% if item.unread > 0 %}fw-700{% endif %}">{{ item.other.username }}</span>
+                        {% if item.last_msg %}<span class="dm-convo-time">{{ item.last_msg.created_at|naturaltime }}</span>{% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="dm-convo-preview">
+                            {% if item.last_msg %}{% if item.last_msg.sender == user %}You: {% endif %}{{ item.last_msg.content|truncatechars:38 }}{% endif %}
+                        </span>
+                        {% if item.unread > 0 %}<span class="dm-unread-badge">{{ item.unread }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="p-4 text-center text-muted small">No conversations yet</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Chat panel ─────────────────────────────────────── -->
+    <div class="dm-main dm-chat-panel">
+        <!-- Chat header -->
+        <div class="dm-chat-header">
+            <a href="{% url 'inbox' %}" class="d-lg-none me-2 icon-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
+            <a href="{% url 'profile_detail' username=other.username %}" class="dm-chat-header-user">
+                <div class="position-relative">
+                    <img src="{{ other.profile.profile_picture.url }}" alt="{{ other.username }}" class="dm-chat-avatar">
+                    <span class="online-dot online-dot-header"></span>
+                </div>
+                <div>
+                    <div class="fw-700">{{ other.username }}</div>
+                    <div class="text-muted small">Active now</div>
+                </div>
+            </a>
+            <div class="ms-auto d-flex gap-2">
+                <a href="{% url 'profile_detail' username=other.username %}" class="icon-btn" title="View profile">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages scroll area -->
+        <div class="dm-messages-area" id="messagesArea">
+            {% if not messages %}
+            <div class="dm-start-convo text-center py-5">
+                <img src="{{ other.profile.profile_picture.url }}" alt="{{ other.username }}" class="rounded-circle mb-3" style="width:80px;height:80px;object-fit:cover">
+                <h6 class="fw-700">{{ other.username }}</h6>
+                <p class="text-muted small">Say hi to start a conversation!</p>
+            </div>
+            {% endif %}
+
+            {% regroup messages by created_at|date:"Y-m-d" as day_groups %}
+            {% for day in day_groups %}
+            <div class="dm-date-divider">
+                <span>{{ day.grouper|date:"F j, Y" }}</span>
+            </div>
+            {% for msg in day.list %}
+            <div class="dm-message-wrap {% if msg.sender == user %}dm-mine{% else %}dm-theirs{% endif %}" data-msg-id="{{ msg.pk }}">
+                {% if msg.sender != user %}
+                <img src="{{ msg.sender.profile.profile_picture.url }}" alt="{{ msg.sender.username }}" class="dm-msg-avatar">
+                {% endif %}
+                <div class="dm-bubble-group">
+                    <div class="dm-bubble">{{ msg.content }}</div>
+                    <div class="dm-msg-meta">
+                        {{ msg.created_at|time:"g:i A" }}
+                        {% if msg.sender == user %}
+                            {% if msg.is_read %}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ig-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Seen"><polyline points="20 6 9 17 4 12"/><polyline points="20 6 9 17 4 12" transform="translate(4 0)"/></svg>
+                            {% else %}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Sent"><polyline points="20 6 9 17 4 12"/></svg>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+            <div id="msgBottom"></div>
+        </div>
+
+        <!-- Message input -->
+        <div class="dm-input-bar">
+            <form method="post" class="dm-input-form" id="dmForm">
+                {% csrf_token %}
+                <button type="button" class="icon-btn dm-emoji-btn" aria-label="Emoji">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                </button>
+                <input type="text" name="content" id="dm-message-input" class="form-control dm-input" placeholder="Message..." autocomplete="off" required>
+                <button type="submit" class="dm-send-btn" id="dmSendBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- New DM Modal -->
+<div class="modal fade" id="newDmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header border-bottom">
+                <h6 class="modal-title fw-700">New Message</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="d-flex align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted me-2 fw-600 small">To:</span>
+                    <input type="text" class="form-control border-0 shadow-none p-0" placeholder="Search..." id="dmUserSearch" autocomplete="off">
+                </div>
+                <div id="dmUserResults" class="dm-user-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Scroll to bottom ─────────────────────────────────────
+function scrollToBottom() {
+    const area = document.getElementById('messagesArea');
+    if (area) area.scrollTop = area.scrollHeight;
+}
+scrollToBottom();
+
+// ── WebSocket real-time messaging ────────────────────────
+const convoId = {{ convo.pk }};
+const currentUser = "{{ user.username }}";
+const currentAvatar = "{{ user.profile.profile_picture.url }}";
+const otherAvatar = "{{ other.profile.profile_picture.url }}";
+
+const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+let ws;
+
+function connectWS() {
+    ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/chat/${convoId}/`);
+
+    ws.onopen = function() {
+        console.log('WS connected');
+    };
+
+    ws.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'chat_message') {
+            appendMessage(data);
+        }
+    };
+
+    ws.onclose = function() {
+        // Fallback: retry after 2s
+        setTimeout(connectWS, 2000);
+    };
+}
+
+function appendMessage(data) {
+    const isMine = data.sender === currentUser;
+    const area = document.getElementById('messagesArea');
+    const wrap = document.createElement('div');
+    wrap.className = 'dm-message-wrap ' + (isMine ? 'dm-mine' : 'dm-theirs');
+    wrap.dataset.msgId = data.message_id;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    wrap.innerHTML = `
+        ${!isMine ? `<img src="${otherAvatar}" class="dm-msg-avatar" alt="">` : ''}
+        <div class="dm-bubble-group">
+            <div class="dm-bubble">${escapeHtml(data.content)}</div>
+            <div class="dm-msg-meta">${timeStr}${isMine ? ' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</div>
+        </div>`;
+    area.appendChild(wrap);
+    area.scrollTop = area.scrollHeight;
+}
+
+function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// Try WebSocket, fallback to AJAX
+try { connectWS(); } catch(e) { console.log('WS not available, using AJAX'); }
+
+// ── Form submission (WS or AJAX fallback) ────────────────
+document.getElementById('dmForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('dm-message-input');
+    const content = input.value.trim();
+    if (!content) return;
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ content: content }));
+        input.value = '';
+    } else {
+        // AJAX fallback
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(`/inbox/${convoId}/send/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `content=${encodeURIComponent(content)}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            appendMessage({
+                type: 'chat_message',
+                message_id: data.id,
+                content: data.content,
+                sender: currentUser,
+                created_at: data.created_at,
+            });
+            input.value = '';
+        })
+        .catch(() => { this.submit(); });
+    }
+});
+
+// ── New DM user search ────────────────────────────────────
+const dmUserSearch = document.getElementById('dmUserSearch');
+const dmUserResults = document.getElementById('dmUserResults');
+let dmSearchTimer;
+if (dmUserSearch) {
+    dmUserSearch.addEventListener('input', function() {
+        clearTimeout(dmSearchTimer);
+        const q = this.value.trim();
+        if (!q) { dmUserResults.innerHTML = ''; return; }
+        dmSearchTimer = setTimeout(function() {
+            fetch('/search/suggestions/?q=' + encodeURIComponent(q), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.results.length) {
+                    dmUserResults.innerHTML = '<div class="p-3 text-center text-muted small">No users found</div>';
+                    return;
+                }
+                dmUserResults.innerHTML = data.results.map(u =>
+                    `<a href="/dm/${u.username}/" class="dm-user-result-item">
+                        <img src="${u.avatar}" alt="${u.username}">
+                        <div><div class="fw-600">${u.username}</div><div class="text-muted small">${u.bio || ''}</div></div>
+                    </a>`
+                ).join('');
+            });
+        }, 300);
+    });
+}
+</script>
+{% endblock %}

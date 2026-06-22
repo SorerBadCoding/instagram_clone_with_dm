@@ -1,0 +1,7 @@
+<a href="{% url 'post_detail' pk=post.pk %}" class="grid-item">
+    <img src="{{ post.image.url }}" alt="Post by {{ post.user.username }}">
+    <div class="grid-item-overlay">
+        <span><i class="fa-solid fa-heart"></i> {{ post.liked_count|default:post.likes_count }}</span>
+        <span><i class="fa-solid fa-comment"></i> {{ post.comment_count|default:post.comments_count }}</span>
+    </div>
+</a>

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Inbox · InstaClone{% endblock %}
+
+{% block content %}
+<div class="dm-layout">
+    <!-- ── Conversation list panel ─────────────────────── -->
+    <div class="dm-sidebar" id="dmSidebar">
+        <div class="dm-sidebar-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="fw-700 mb-0">{{ user.username }}</h5>
+                <button class="icon-btn" data-bs-toggle="modal" data-bs-target="#newDmModal" title="New Message">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+            </div>
+            <div class="dm-search-wrap mt-3">
+                <input type="text" class="form-control dm-search" placeholder="Search conversations..." id="convoSearch">
+            </div>
+        </div>
+
+        <div class="dm-convo-list" id="convoList">
+            {% if enriched_conversations %}
+                {% for item in enriched_conversations %}
+                <a href="{% url 'conversation' item.convo.pk %}" class="dm-convo-item {% if item.unread > 0 %}unread{% endif %}">
+                    <div class="dm-convo-avatar-wrap">
+                        <img src="{{ item.other.profile.profile_picture.url }}" alt="{{ item.other.username }}" class="dm-convo-avatar">
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="dm-convo-info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="dm-convo-name {% if item.unread > 0 %}fw-700{% endif %}">{{ item.other.username }}</span>
+                            {% if item.last_msg %}
+                            <span class="dm-convo-time">{{ item.last_msg.created_at|naturaltime }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="dm-convo-preview {% if item.unread > 0 %}fw-600{% endif %}">
+                                {% if item.last_msg %}
+                                    {% if item.last_msg.sender == user %}You: {% endif %}
+                                    {{ item.last_msg.content|truncatechars:40 }}
+                                {% else %}
+                                    Start a conversation
+                                {% endif %}
+                            </span>
+                            {% if item.unread > 0 %}
+                            <span class="dm-unread-badge">{{ item.unread }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+            <div class="dm-empty-state">
+                <div class="dm-empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <p class="fw-600 mt-3">No messages yet</p>
+                <p class="text-muted small">Send a message to start a conversation</p>
+                <button class="btn ig-btn btn-sm text-white px-4 mt-2" data-bs-toggle="modal" data-bs-target="#newDmModal">New Message</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Empty right panel (desktop) ────────────────── -->
+    <div class="dm-main d-none d-lg-flex align-items-center justify-content-center">
+        <div class="text-center dm-welcome">
+            <div class="dm-welcome-icon mx-auto">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h4 class="mt-4 fw-700">Your Messages</h4>
+            <p class="text-muted">Send private messages to a friend.</p>
+            <button class="btn ig-btn text-white px-5 mt-2" data-bs-toggle="modal" data-bs-target="#newDmModal">New Message</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── New DM Modal ─────────────────────────────────────── -->
+<div class="modal fade" id="newDmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header border-bottom">
+                <h6 class="modal-title fw-700">New Message</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="dm-user-search-wrap">
+                    <div class="d-flex align-items-center px-3 py-2 border-bottom">
+                        <span class="text-muted me-2 fw-600 small">To:</span>
+                        <input type="text" class="form-control border-0 shadow-none p-0" placeholder="Search..." id="dmUserSearch" autocomplete="off">
+                    </div>
+                    <div id="dmUserResults" class="dm-user-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Conversation search filter
+document.getElementById('convoSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.dm-convo-item').forEach(function(item) {
+        const name = item.querySelector('.dm-convo-name').textContent.toLowerCase();
+        item.style.display = name.includes(q) ? '' : 'none';
+    });
+});
+
+// New DM user search
+const dmUserSearch = document.getElementById('dmUserSearch');
+const dmUserResults = document.getElementById('dmUserResults');
+let dmSearchTimer;
+
+dmUserSearch.addEventListener('input', function() {
+    clearTimeout(dmSearchTimer);
+    const q = this.value.trim();
+    if (!q) { dmUserResults.innerHTML = ''; return; }
+    dmSearchTimer = setTimeout(function() {
+        fetch('/search/suggestions/?q=' + encodeURIComponent(q), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.results.length) {
+                dmUserResults.innerHTML = '<div class="p-3 text-center text-muted small">No users found</div>';
+                return;
+            }
+            dmUserResults.innerHTML = data.results.map(u =>
+                `<a href="/dm/${u.username}/" class="dm-user-result-item">
+                    <img src="${u.avatar}" alt="${u.username}">
+                    <div>
+                        <div class="fw-600">${u.username}</div>
+                        <div class="text-muted small">${u.bio || ''}</div>
+                    </div>
+                </a>`
+            ).join('');
+        });
+    }, 300);
+});
+</script>
+{% endblock %}

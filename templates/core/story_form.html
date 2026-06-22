@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add story • InstaClone{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="card form-card shadow-sm">
+                <div class="card-header bg-transparent fw-semibold text-center">Add to your story</div>
+                <div class="card-body">
+                    <p class="text-muted small text-center">Your story will be visible to your followers for 24 hours.</p>
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Photo</label>
+                            {{ form.image }}
+                            {% for error in form.image.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Caption</label>
+                            {{ form.caption }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 ig-btn">Share to story</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

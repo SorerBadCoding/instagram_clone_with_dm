@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ story_user.username }}'s story • InstaClone{% endblock %}
+{% block content %}
+<div class="story-viewer-backdrop">
+    <div class="story-viewer-box">
+        <a href="{% url 'feed' %}" class="story-close"><i class="fa-solid fa-xmark"></i></a>
+        {% if stories %}
+        <div class="story-progress-bars">
+            {% for story in stories %}
+            <div class="story-progress-bar"><div class="story-progress-fill" data-index="{{ forloop.counter0 }}"></div></div>
+            {% endfor %}
+        </div>
+        <div class="story-header">
+            <img src="{{ story_user.profile.profile_picture.url }}" alt="{{ story_user.username }}">
+            <span class="fw-semibold">{{ story_user.username }}</span>
+            <span class="story-time text-light small" id="storyTime"></span>
+            {% if story_user == request.user %}
+            <form method="post" id="deleteStoryForm" class="ms-auto">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-link text-light"><i class="fa-solid fa-trash"></i></button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="story-slides">
+            {% for story in stories %}
+            <div class="story-slide {% if forloop.first %}active{% endif %}"
+                 data-caption="{{ story.caption|default:'' }}"
+                 data-delete-url="{% url 'story_delete' pk=story.pk %}"
+                 data-time="{{ story.created_at|timesince }} ago">
+                <img src="{{ story.image.url }}" alt="Story by {{ story_user.username }}">
+                {% if story.caption %}<div class="story-caption">{{ story.caption }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <button class="story-nav story-nav-prev" id="storyPrev"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="story-nav story-nav-next" id="storyNext"><i class="fa-solid fa-chevron-right"></i></button>
+        {% else %}
+        <div class="text-center text-light p-5">
+            <i class="fa-regular fa-circle-xmark fs-1 mb-3"></i>
+            <h5>No active stories</h5>
+            <a href="{% url 'feed' %}" class="btn btn-light mt-3">Back to feed</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const slides = document.querySelectorAll('.story-slide');
+    if (!slides.length) return;
+    let current = 0;
+    const fills = document.querySelectorAll('.story-progress-fill');
+    const timeLabel = document.getElementById('storyTime');
+    const deleteForm = document.getElementById('deleteStoryForm');
+    let timer = null;
+    const DURATION = 5000;
+
+    function showSlide(index) {
+        slides.forEach((s, i) => s.classList.toggle('active', i === index));
+        fills.forEach((f, i) => {
+            f.style.transition = 'none';
+            f.style.width = i < index ? '100%' : '0%';
+        });
+        if (timeLabel) timeLabel.textContent = slides[index].dataset.time;
+        if (deleteForm) deleteForm.action = slides[index].dataset.deleteUrl;
+        void fills[index].offsetWidth;
+        fills[index].style.transition = 'width ' + DURATION + 'ms linear';
+        fills[index].style.width = '100%';
+    }
+
+    function nextSlide() {
+        if (current < slides.length - 1) {
+            current += 1;
+            showSlide(current);
+            restart();
+        } else {
+            window.location.href = "{% url 'feed' %}";
+        }
+    }
+
+    function prevSlide() {
+        if (current > 0) {
+            current -= 1;
+            showSlide(current);
+            restart();
+        }
+    }
+
+    function restart() {
+        clearTimeout(timer);
+        timer = setTimeout(nextSlide, DURATION);
+    }
+
+    document.getElementById('storyNext').addEventListener('click', nextSlide);
+    document.getElementById('storyPrev').addEventListener('click', prevSlide);
+
+    showSlide(current);
+    restart();
+});
+</script>
+{% endblock %}

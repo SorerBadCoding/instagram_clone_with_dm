@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Django
+db.sqlite3
+staticfiles/
+*.log
+
+# Media uploads (keep folder structure, ignore uploaded content)
+media/posts/*
+!media/posts/.gitkeep
+media/stories/*
+!media/stories/.gitkeep
+media/profile_pics/*
+!media/profile_pics/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
