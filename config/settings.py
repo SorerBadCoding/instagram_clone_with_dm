@@ -23,7 +23,6 @@ ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://instagram-clone-with-dm.onrender.com",
-    "http://instagram-clone-with-dm.onrender.com",
 ]
 
 CSRF_COOKIE_SECURE = True
